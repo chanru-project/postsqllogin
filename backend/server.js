@@ -5,6 +5,12 @@ const pool = require("./db.js");
 
 const app = express();
 const PORT = Number(process.env.PORT) || 5000;
+const AUTH_TABLE = /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(
+  process.env.AUTH_TABLE || "students"
+)
+  ? process.env.AUTH_TABLE || "students"
+  : "students";
+let AUTH_NAME_COLUMN = "username";
 
 app.use(cors());
 app.use(express.json()); // ✅ IMPORTANT
@@ -25,7 +31,7 @@ app.get("/health", (req, res) => {
 
 async function initializeDatabase() {
   await pool.query(`
-    CREATE TABLE IF NOT EXISTS users (
+    CREATE TABLE IF NOT EXISTS ${AUTH_TABLE} (
       id SERIAL PRIMARY KEY,
       username VARCHAR(255),
       email VARCHAR(255) UNIQUE NOT NULL,
@@ -33,6 +39,19 @@ async function initializeDatabase() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `);
+
+  const columns = await pool.query(
+    `SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name='${AUTH_TABLE}'`
+  );
+  const columnSet = new Set(columns.rows.map((r) => r.column_name));
+
+  if (columnSet.has("username")) {
+    AUTH_NAME_COLUMN = "username";
+  } else if (columnSet.has("name")) {
+    AUTH_NAME_COLUMN = "name";
+  } else {
+    AUTH_NAME_COLUMN = "username";
+  }
 }
 
 // LOGIN API
@@ -49,8 +68,11 @@ app.post("/login", async (req, res) => {
   }
 
   try {
+    const nameSelect =
+      AUTH_NAME_COLUMN === "name" ? "name AS username" : "username";
+
     const result = await pool.query(
-      "SELECT id, username, email, password, created_at FROM users WHERE LOWER(TRIM(email)) = LOWER(TRIM($1)) LIMIT 1",
+      `SELECT id, ${nameSelect}, email, password, created_at FROM ${AUTH_TABLE} WHERE LOWER(TRIM(email)) = LOWER(TRIM($1)) LIMIT 1`,
       [email]
     );
 
