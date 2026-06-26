@@ -11,18 +11,34 @@ function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    const res = await fetch(`${API_BASE_URL}/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
+    try {
+      const res = await fetch(`${API_BASE_URL}/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-    const data = await res.json();
+      let data = null;
+      try {
+        data = await res.json();
+      } catch {
+        data = null;
+      }
 
-    if (data.success) {
-      navigate("/dashboard"); // ✅ REDIRECT
-    } else {
-      alert("Invalid Email or Password ❌");
+      if (res.ok && data?.success) {
+        navigate("/dashboard");
+        return;
+      }
+
+      const message =
+        data?.message ||
+        (res.ok
+          ? "Invalid Email or Password"
+          : `Login failed (HTTP ${res.status})`);
+      alert(`${message} ❌`);
+    } catch (error) {
+      alert("Cannot reach login server. Check API URL and backend status. ❌");
+      console.error("Login request failed:", error);
     }
   };
 
