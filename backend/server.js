@@ -1,9 +1,10 @@
 const express = require("express");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
-const pool = require("./db");
+const pool = require("./db.js");
 
 const app = express();
+const PORT = Number(process.env.PORT) || 5000;
 
 app.use(cors());
 app.use(express.json()); // ✅ IMPORTANT
@@ -76,8 +77,8 @@ app.post("/login", async (req, res) => {
 initializeDatabase()
   .then(() => {
     console.log("Database is ready");
-    app.listen(5000, () => {
-      console.log("Server running on port 5000");
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
     });
   })
   .catch((error) => {
