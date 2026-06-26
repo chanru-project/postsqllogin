@@ -84,11 +84,12 @@ app.post("/login", async (req, res) => {
     }
 
     const user = result.rows[0];
-    const trimmedPassword = password.trim();
-    const isHashedPassword = user.password.startsWith("$2");
+    const trimmedPassword = String(password).trim();
+    const storedPasswordValue = String(user.password || "");
+    const isHashedPassword = storedPasswordValue.startsWith("$2");
     const passwordMatches = isHashedPassword
-      ? await bcrypt.compare(trimmedPassword, user.password)
-      : trimmedPassword === user.password;
+      ? await bcrypt.compare(trimmedPassword, storedPasswordValue)
+      : trimmedPassword === storedPasswordValue.trim();
 
     if (!passwordMatches) {
       return res.json({
