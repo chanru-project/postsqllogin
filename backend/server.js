@@ -33,19 +33,6 @@ async function initializeDatabase() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `);
-
-  const shouldSeedDemoUser = process.env.SEED_DEMO_USER === "true";
-  if (shouldSeedDemoUser) {
-    const seededPasswordHash = await bcrypt.hash("12345", 10);
-    await pool.query(
-      `
-        INSERT INTO users (username, email, password)
-        VALUES ($1, $2, $3)
-        ON CONFLICT (email) DO NOTHING
-      `,
-      ["john", "john@example.com", seededPasswordHash]
-    );
-  }
 }
 
 // LOGIN API
